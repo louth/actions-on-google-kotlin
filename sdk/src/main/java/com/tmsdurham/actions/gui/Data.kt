@@ -3,6 +3,7 @@ package com.tmsdurham.actions.gui
 import com.ticketmaster.apiai.google.GoogleData
 import com.ticketmaster.banjo.domain.bot.output.gui.TransactionCompleteData
 import com.tmsdurham.actions.SimpleResponse
+import com.tmsdurham.actions.SupportedIntent
 
 
 data class Data(
@@ -43,15 +44,10 @@ data class Data(
     }
 }
 
-class PermissionRequest(val reason: String, vararg val permissions: Permission)
+class PermissionRequest(val reason: String? = null, vararg val permissions: SupportedIntent, var optContext: String)
 
-enum class Permission {
-    NAME,
-    DEVICE_PRECISE_LOCATION,
-    DEVICE_COARSE_LOCATION
-}
 
-fun Array<out Permission>.toListOrStrings() = this.map { it.toString() }
+fun Array<out SupportedIntent>.toListOrStrings() = this.map { it.toString() }
 
 //data class SimpleResponse(var speech: String = "", var displayText: String = "") {
 //    fun isEmpty() = speech.isNullOrEmpty() && displayText.isNullOrBlank()

@@ -955,7 +955,7 @@ object ActionsTest : Spek({
             val app = ApiAiApp(request = mockRequest, response = mockResponse)
 
             val handler: MockHandler = {
-                app.askForPermissions("To test", "NAME", "DEVICE_PRECISE_LOCATION")
+                app.askForPermissions("To test", SupportedIntent.NAME, SupportedIntent.DEVICE_PRECISE_LOCATION)
             }
 
             val actionMap = mapOf("get_permission" to handler)
@@ -1040,7 +1040,7 @@ object ActionsTest : Spek({
                 val app = ApiAiApp(request = mockRequest, response = mockResponse)
 
                 val handler: MockHandler = {
-                    app.askForPermissions("To test", "NAME", "DEVICE_PRECISE_LOCATION")
+                    app.askForPermissions("To test", SupportedIntent.NAME, SupportedIntent.DEVICE_PRECISE_LOCATION)
                 }
 
                 val actionMap = mapOf("get_permission" to handler)

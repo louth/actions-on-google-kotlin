@@ -2,8 +2,10 @@ package com.tmsdurham.actions
 
 import com.ticketmaster.apiai.*
 import com.ticketmaster.apiai.google.GoogleData
+import com.tmsdurham.actions.gui.PermissionRequest
 
 class ApiAiApp<T> : AssistantApp<ApiAiRequest<T>, ApiAiResponse<T>, T> {
+
 
     // Constants
     val RESPONSE_CODE_OK = 200
@@ -324,15 +326,43 @@ class ApiAiApp<T> : AssistantApp<ApiAiRequest<T>, ApiAiResponse<T>, T> {
     }
 
     fun getDeviceLocation(): DeviceLocation? {
-        return request.body.originalRequest?.data?.device?.location;
+        return request.body.originalRequest?.data?.device?.location
     }
 
-    // INTERNAL FUNCTIONS
-    override fun fulfillPermissionRequest(permissionSpec: GoogleData.PermissionsRequest): Unit {
-        response.body?.data?.google?.systemIntent = GoogleData.SystemIntent(intent = STANDARD_INTENTS.PERMISSION)
-        response.body?.data?.google?.systemIntent?.data?.`@type` = INPUT_VALUE_DATA_TYPES.PERMISSION
-        response.body?.data?.google?.systemIntent?.data?.permissions = permissionSpec.permissions
+
+    /**
+     * Uses a PermissionsValueSpec object to construct and send a
+     * permissions request to the user.
+     *
+     * @param {Object} permissionsSpec PermissionsValueSpec object containing
+     *     the permissions prefix and permissions requested.
+     * @return {Object} The HTTP response.
+     * @private
+     * @apiai
+     */
+    override fun fulfillPermissionsRequest(permissionSpec: PermissionRequest, dialogState: DialogState<ApiAiRequest<T>>?): ResponseWrapper<ApiAiResponse<T>>? {
+        debug("fulfillPermissionsRequest_: permissionsSpec=$permissionSpec")
+        val inputPrompt = "PLACEHOLDER_FOR_PERMISSION";
+        val response = this.buildResponse(inputPrompt, true)
+        response?.body?.data?.google?.systemIntent?.intent = STANDARD_INTENTS.PERMISSION
+        if (isNotApiVersionOne()) {
+            response?.body?.data?.google?.systemIntent?.data?.`@type`  = INPUT_VALUE_DATA_TYPES.PERMISSION
+//            }, permissionsSpec);
+        } else {
+            response?.body?.data?.google?.systemIntent?.spec?.permissionValueSpec = permissionSpec
+        }
+        if (response != null) {
+            return doResponse(response, RESPONSE_CODE_OK)
+        } else {
+            return null
+        }
     }
+    // INTERNAL FUNCTIONS
+//    override fun fulfillPermissionRequest(permissionSpec: PermissionRequest): Unit {
+//        response.body?.data?.google?.systemIntent = GoogleData.SystemIntent(intent = STANDARD_INTENTS.PERMISSION)
+//        response.body?.data?.google?.systemIntent?.data?.`@type` = INPUT_VALUE_DATA_TYPES.PERMISSION
+//        response.body?.data?.google?.systemIntent?.data?.permissions = permissionSpec.permissions
+//    }
 
 
     //TODO builderResponse(richResponse,...)

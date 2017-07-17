@@ -2,11 +2,12 @@ package com.ticketmaster.apiai.google
 
 import com.tmsdurham.actions.Carousel
 import com.tmsdurham.actions.RichResponse
+import com.tmsdurham.actions.gui.PermissionRequest
 
 data class GoogleData(
         var isSsml: Boolean = false,
         var noInputPrompts: MutableList<NoInputPrompts>? = mutableListOf(),
-        var permissionsRequest: PermissionsRequest? = null,
+        var permissionsRequest: PermissionRequest? = null,
         var systemIntent: SystemIntent? = null,
         var expectUserResponse: Boolean = false,
         var possibleIntents: List<PossibleIntent>? = null,
@@ -22,22 +23,15 @@ data class GoogleData(
 
     data class NoInputPrompts(val ssml: String? = null, val textToSpeech: String? = null)
 
-    data class PermissionsRequest(
-            var optContext: String? = null,
-            var permissions: MutableList<String>? = null,
-            var expectUserResponse: Boolean = false)
-
-
-
-
     data class SystemIntent(
             var spec: Spec? = null,
             var intent: String? = null,
             var data: Data? = null)
 
-    data class Spec(var optionValueSpec: OptionValueSpec)
+    data class Spec(var optionValueSpec: OptionValueSpec? = null, var permissionValueSpec: PermissionRequest? = null)
 
     data class OptionValueSpec(var listSelect: com.tmsdurham.actions.List? = null, var carouselSelect: Carousel? = null)
+
 
     data class Data(
             var `@type`: String? = null,

@@ -1,10 +1,8 @@
 package com.tmsdurham.actions
 
-import com.ticketmaster.apiai.ApiAiRequest
-import com.ticketmaster.apiai.ContextOut
-import com.ticketmaster.apiai.Profile
-import com.ticketmaster.apiai.User
+import com.ticketmaster.apiai.*
 import com.ticketmaster.apiai.google.GoogleData
+import com.tmsdurham.actions.gui.PermissionRequest
 import java.util.logging.Logger
 
 typealias Handler<T, S, U> = (AssistantApp<T, S, U>) -> Unit
@@ -44,22 +42,22 @@ class StandardIntents(val isNotVersionOne: Boolean) {
     val SIGN_IN = "actions.intent.SIGN_IN"
 }
 
-class SupportedIntent {
+enum class SupportedIntent {
     /**
      * The user"s name as defined in the
      * {@link https://developers.google.com/actions/reference/conversation#UserProfile|UserProfile object}
      */
-    val NAME = "NAME"
+    NAME,
     /**
      * The location of the user"s current device, as defined in the
      * {@link https://developers.google.com/actions/reference/conversation#Location|Location object}.
      */
-    val DEVICE_PRECISE_LOCATION = "DEVICE_PRECISE_LOCATION"
+    DEVICE_PRECISE_LOCATION,
     /**
      * City and zipcode corresponding to the location of the user"s current device, as defined in the
      * {@link https://developers.google.com/actions/reference/conversation#Location|Location object}.
      */
-    val DEVICE_COARSE_LOCATION = "DEVICE_COARSE_LOCATION"
+    DEVICE_COARSE_LOCATION
 }
 
 /**
@@ -164,7 +162,6 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
     var actionsApiVersion: String = "1"
     val logger = Logger.getAnonymousLogger()
     lateinit var STANDARD_INTENTS: StandardIntents
-    val SUPPORTED_INTENT = SupportedIntent()
     lateinit var BUILT_IN_ARG_NAMES: BuiltInArgNames
     val INPUT_VALUE_DATA_TYPES = InputValueDataTypes()
     lateinit var CONVERSATION_STAGES: ConversationStages
@@ -223,16 +220,87 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
         invokeIntentHandler(handler as Map<*, Handler<T, S, U>>, getIntent())
     }
 
-    fun askForPermissions(context: String, vararg permissions: String): Any? {
+    /**
+     * Asks the Assistant to guide the user to grant a permission. For example,
+     * if you want your app to get access to the user"s name, you would invoke
+     * the askForPermission method with a context containing the reason for the request,
+     * and the AssistantApp.SupportedPermissions.NAME permission. With this, the Assistant will ask
+     * the user, in your agent"s voice, the following: "[Context with reason for the request],
+     * I"ll just need to get your name from Google, is that OK?".
+     *
+     * Once the user accepts or denies the request, the Assistant will fire another intent:
+     * assistant.intent.action.PERMISSION with a boolean argument: AssistantApp.BuiltInArgNames.PERMISSION_GRANTED
+     * and, if granted, the information that you requested.
+     *
+     * Read more:
+     *
+     * * {@link https://developers.google.com/actions/reference/conversation#ExpectedIntent|Supported Permissions}
+     * * Check if the permission has been granted with {@link ActionsSdkApp#isPermissionGranted|isPermissionsGranted}
+     * * {@link ActionsSdkApp#getDeviceLocation|getDeviceLocation}
+     * * {@link AssistantApp#getUserName|getUserName}
+     *
+     * @example
+     * const app = new ApiAiApp({request: req, response: res});
+     * const REQUEST_PERMISSION_ACTION = "request_permission";
+     * const GET_RIDE_ACTION = "get_ride";
+     *
+     * function requestPermission (app) {
+     *   const permission = app.SupportedPermissions.NAME;
+     *   app.askForPermission("To pick you up", permission);
+     * }
+     *
+     * function sendRide (app) {
+     *   if (app.isPermissionGranted()) {
+     *     const displayName = app.getUserName().displayName;
+     *     app.tell("I will tell your driver to pick up " + displayName);
+     *   } else {
+     *     // Response shows that user did not grant permission
+     *     app.tell("Sorry, I could not figure out who to pick up.");
+     *   }
+     * }
+     * const actionMap = new Map();
+     * actionMap.set(REQUEST_PERMISSION_ACTION, requestPermission);
+     * actionMap.set(GET_RIDE_ACTION, sendRide);
+     * app.handleRequest(actionMap);
+     *
+     * @param {string} context Context why permission is asked; it"s the TTS
+     *     prompt prefix (action phrase) we ask the user.
+     * @param {Permission} permission One of the permissions Assistant supports, each of
+     *     which comes from AssistantApp.SupportedPermissions. //TODO move enum here
+     * @param {Object=} dialogState JSON object the app uses to hold dialog state that
+     *     will be circulated back by Assistant.
+     * @return A response is sent to the Assistant to ask for the user"s permission;
+     *     for any invalid input, we return null.
+     * @actionssdk
+     * @apiai
+     */
+    fun askForPermissions(context: String, vararg permissions: SupportedIntent, dialogState: DialogState<T>? = null): Any? {
         if (context.isEmpty()) {
             handleError("Assistant context can NOT be empty.")
             return null
         }
-        return fulfillPermissionRequest(GoogleData.PermissionsRequest(
-                optContext = context,
-                permissions = permissions.toMutableList()
+        if (context === "") {
+            handleError("Assistant context can NOT be empty.");
+            return null
+        }
+        if (permissions.isEmpty()) {
+            handleError("At least one permission needed.")
+            return null
+        }
 
-        ))
+        var outDialogState: DialogState<T>
+        if (dialogState == null) {
+//            dialogState = DialogState(
+//                    state = state,
+//                    data = response.body)
+        }
+        return fulfillPermissionsRequest(PermissionRequest(
+                optContext = context,
+                permissions = *permissions), dialogState);
+        return fulfillPermissionsRequest(PermissionRequest(
+                optContext = context,
+                permissions = *permissions)
+        )
     }
 
     fun doResponse(response: ResponseWrapper<S>, responseCode: Int = 0): ResponseWrapper<S>? {
@@ -274,7 +342,7 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
      * @param {string=} title A title to set for a new List.
      * @return {List} Constructed List.
      */
-    fun buildList (title: String? = null): List {
+    fun buildList(title: String? = null): List {
         return List(title)
     }
 
@@ -283,7 +351,7 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
      *
      * @return {Carousel} Constructed Carousel.
      */
-    fun buildCarousel (): Carousel {
+    fun buildCarousel(): Carousel {
         return Carousel()
     }
 
@@ -297,7 +365,7 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
      *     use to identify this option instead of the option key.
      * @return {OptionItem} Constructed OptionItem.
      */
-    fun buildOptionItem (key: String, vararg synonyms: String): OptionItem {
+    fun buildOptionItem(key: String, vararg synonyms: String): OptionItem {
         val optionInfo = OptionInfo()
         if (!key.isNullOrBlank()) {
             optionInfo?.key = key
@@ -310,26 +378,26 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
 
 
     /**
-     * If granted permission to user's name in previous intent, returns user's
+     * If granted permission to user"s name in previous intent, returns user"s
      * display name, family name, and given name. If name info is unavailable,
      * returns null.
 
      * @example
      * * const app = new ApiAIApp({request: req, response: res});
-     * * const REQUEST_PERMISSION_ACTION = 'request_permission';
-     * * const SAY_NAME_ACTION = 'get_name';
+     * * const REQUEST_PERMISSION_ACTION = "request_permission";
+     * * const SAY_NAME_ACTION = "get_name";
      * *
      * * function requestPermission (app) {
      * *   const permission = app.SupportedPermissions.NAME;
-     * *   app.askForPermission('To know who you are', permission);
+     * *   app.askForPermission("To know who you are", permission);
      * * }
      * *
      * * function sayName (app) {
      * *   if (app.isPermissionGranted()) {
-     * *     app.tell('Your name is ' + app.getUserName().displayName));
+     * *     app.tell("Your name is " + app.getUserName().displayName));
      * *   } else {
      * *     // Response shows that user did not grant permission
-     * *     app.tell('Sorry, I could not get your name.');
+     * *     app.tell("Sorry, I could not get your name.");
      * *   }
      * * }
      * * const actionMap = new Map();
@@ -348,13 +416,13 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
         return this.getUser()?.profile
     }
 
-    internal abstract fun fulfillPermissionRequest(permissionSpec: GoogleData.PermissionsRequest): Any
+    abstract internal fun fulfillPermissionsRequest(permissionSpec: PermissionRequest, dialogState: DialogState<T>? = null): ResponseWrapper<S>?
 
     abstract fun getIntent(): String
     abstract fun tell(speech: String, displayText: String = ""): ResponseWrapper<S>?
     abstract fun tell(richResponse: RichResponse?): ResponseWrapper<S>?
     abstract fun tell(simpleResponse: SimpleResponse): ResponseWrapper<S>?
-//    abstract fun askWithList(speech: String? = null, richResponse: RichResponse): ResponseWrapper<S>?
+    //    abstract fun askWithList(speech: String? = null, richResponse: RichResponse): ResponseWrapper<S>?
 //    abstract fun askWithList(speech: String? = null, list: List): ResponseWrapper<S>?
     abstract fun getUser(): User?
 
@@ -384,7 +452,7 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
             intentHandler(this)
             return true
         } else {
-            this.handleError("no matching intent handler for: " + intent);
+            this.handleError("no matching intent handler for: " + intent)
             return false
         }
     }
@@ -413,7 +481,7 @@ open abstract class AssistantApp<T, S, U>(val request: RequestWrapper<T>, val re
      * @private
      */
     internal fun isNotApiVersionOne(): Boolean {
-        debug("isNotApiVersionOne_");
+        debug("isNotApiVersionOne_")
         return actionsApiVersion.isNotEmpty() &&
                 (actionsApiVersion.toInt() >= ACTIONS_CONVERSATION_API_VERSION_TWO)
     }
