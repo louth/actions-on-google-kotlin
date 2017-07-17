@@ -295,10 +295,26 @@ class ApiAiApp<T> : AssistantApp<ApiAiRequest<T>, ApiAiResponse<T>, T> {
 
     }
 
-    fun getUser(): User? {
+    /**
+     * Gets the {@link User} object.
+     * The user object contains information about the user, including
+     * a string identifier and personal information (requires requesting permissions,
+     * see {@link AssistantApp#askForPermissions|askForPermissions}).
+     *
+     * @example
+     * const app = new ApiAiApp({request: request, response: response});
+     * const userId = app.getUser().userId;
+     *
+     * @return {User} Null if no value.
+     * @apiai
+     */
+    override fun getUser (): User? {
+        debug("getUser")
         if (request.body.originalRequest?.data?.user == null) {
+            this.handleError("No user object")
             return null
         }
+
         return request.body.originalRequest?.data?.user
     }
 

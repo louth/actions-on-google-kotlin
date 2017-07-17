@@ -5,9 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.verifyZeroInteractions
-import com.ticketmaster.apiai.ApiAiRequest
-import com.ticketmaster.apiai.ApiAiResponse
-import com.ticketmaster.apiai.apiAiRequest
+import com.ticketmaster.apiai.*
 import com.winterbe.expekt.expect
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
@@ -908,6 +906,421 @@ object ActionsTest : Spek({
         app.handleRequest(actionMap)
 
         expect(mockResponse.statusCode).to.equal(400)
+    }
+
+    /**
+     * Describes the behavior for ApiAiApp askForPermissions method in v1.
+     */
+    describe("ApiAiApp#askForPermissions") {
+        // Success case test, when the API returns a valid 200 response with the response object
+        it("Should return the valid JSON in the response object for the success case.") {
+            val headers = mapOf("Content-Type" to "application/json", "google-assistant-api-version" to "v1")
+            val body = requestFromJson("""{
+                "id": "9c4394e3-4f5a-4e68-b1af-088b75ad3071",
+                "timestamp": "2016-10-28T03:41:39.957Z",
+                "result": {
+                "source": "agent",
+                "resolvedQuery": "Where am I?",
+                "speech": "",
+                "action": "get_permission",
+                "actionIncomplete": false,
+                "parameters": {},
+                "contexts": [],
+                "metadata": {
+                "intentId": "1e46ffc2-651f-4ac0-a54e-9698feb88880",
+                "webhookUsed": "true",
+                "intentName": "give_permission"
+            },
+                "fulfillment": {
+                "speech": ""
+            },
+                "score": 1
+            },
+                "status": {
+                "code": 200,
+                "errorType": "success"
+            },
+                "sessionId": "e420f007-501d-4bc8-b551-5d97772bc50c",
+                "originalRequest": {
+                "data": {
+                "conversation": {
+                "type": 2
+            }
+            }
+            }
+            }""")
+            val mockRequest = RequestWrapper(headers, body)
+            val mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            val app = ApiAiApp(request = mockRequest, response = mockResponse)
+
+            val handler: MockHandler = {
+                app.askForPermissions("To test", "NAME", "DEVICE_PRECISE_LOCATION")
+            }
+
+            val actionMap = mapOf("get_permission" to handler)
+
+            app.handleRequest(actionMap)
+
+            // Validating the response object
+            val expectedResponse = responseFromJson("""{
+                "speech": "PLACEHOLDER_FOR_PERMISSION",
+                "data": {
+                "google": {
+                "expect_user_response": true,
+                "is_ssml": false,
+                "no_input_prompts": [],
+                "system_intent": {
+                "intent": "assistant.intent.action.PERMISSION",
+                "spec": {
+                "permission_value_spec": {
+                "opt_context": "To test",
+                "permissions": ["NAME", "DEVICE_PRECISE_LOCATION"]
+            }
+            }
+            }
+            }
+            },
+                "contextOut": [
+                {
+                    "name": "_actions_on_google_",
+                    "lifespan": 100,
+                    "parameters": {}
+                }
+                ]
+            }""")
+            expect(mockResponse.body).to.equal(expectedResponse)
+        }
+
+        /**
+         * Describes the behavior for ApiAiApp askForPermissions method in v2.
+         */
+        describe("ApiAiApp#askForPermissions") {
+            // Success case test, when the API returns a valid 200 response with the response object
+            it("Should return the valid JSON in the response object for the success case.") {
+                val headers = mapOf("Content-Type" to "application/json")
+                val body = requestFromJson("""{
+                    "id": "9c4394e3-4f5a-4e68-b1af-088b75ad3071",
+                    "timestamp": "2016-10-28T03:41:39.957Z",
+                    "result": {
+                    "source": "agent",
+                    "resolvedQuery": "Where am I?",
+                    "speech": "",
+                    "action": "get_permission",
+                    "actionIncomplete": false,
+                    "parameters": {},
+                    "contexts": [],
+                    "metadata": {
+                    "intentId": "1e46ffc2-651f-4ac0-a54e-9698feb88880",
+                    "webhookUsed": "true",
+                    "intentName": "give_permission"
+                },
+                    "fulfillment": {
+                    "speech": ""
+                },
+                    "score": 1
+                },
+                    "status": {
+                    "code": 200,
+                    "errorType": "success"
+                },
+                    "sessionId": "e420f007-501d-4bc8-b551-5d97772bc50c",
+                    "originalRequest": {
+                    "version": 2,
+                    "data": {
+                    "conversation": {
+                    "type": 2
+                }
+                }
+                }
+                }""")
+                val mockRequest = RequestWrapper(headers, body)
+                val mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+                val app = ApiAiApp(request = mockRequest, response = mockResponse)
+
+                val handler: MockHandler = {
+                    app.askForPermissions("To test", "NAME", "DEVICE_PRECISE_LOCATION")
+                }
+
+                val actionMap = mapOf("get_permission" to handler)
+
+                app.handleRequest(actionMap)
+
+                // Validating the response object
+                val expectedResponse = responseFromJson("""{
+                    "speech": "PLACEHOLDER_FOR_PERMISSION",
+                    "data": {
+                    "google": {
+                    "expectUserResponse": true,
+                    "isSsml": false,
+                    "noInputPrompts": [],
+                    "systemIntent": {
+                    "intent": "actions.intent.PERMISSION",
+                    "data": {
+                    "@type": "type.googleapis.com/google.actions.v2.PermissionValueSpec",
+                    "optContext": "To test",
+                    "permissions": ["NAME", "DEVICE_PRECISE_LOCATION"]
+                }
+                }
+                }
+                },
+                    "contextOut": [
+                    {
+                        "name": "_actions_on_google_",
+                        "lifespan": 100,
+                        "parameters": {}
+                    }
+                    ]
+                }""")
+                expect(mockResponse.body).to.equal(expectedResponse)
+            }
+        }
+    }
+
+    /**
+     * Describes the behavior for ApiAiApp getUser method.
+     */
+    describe("ApiAiApp#getUser") {
+        // Success case test, when the API returns a valid 200 response with the response object
+        it("Should validate assistant request user.") {
+            val headers = mapOf(
+                    "Content-Type" to "application/json",
+                    "google-assistant-api-version" to "v1")
+
+            val body = requestFromJson("""{
+                "id": "ce7295cc-b042-42d8-8d72-14b83597ac1e",
+                "timestamp": "2016-10-28T03:05:34.288Z",
+                "result": {
+                "source": "agent",
+                "resolvedQuery": "start guess a number game",
+                "speech": "",
+                "action": "generate_answer",
+                "actionIncomplete": false,
+                "parameters": {
+
+            },
+                "contexts": [
+
+                ],
+                "metadata": {
+                "intentId": "56da4637-0419-46b2-b851-d7bf726b1b1b",
+                "webhookUsed": "true",
+                "intentName": "start_game"
+            },
+                "fulfillment": {
+                "speech": ""
+            },
+                "score": 1
+            },
+                "status": {
+                "code": 200,
+                "errorType": "success"
+            },
+                "sessionId": "e420f007-501d-4bc8-b551-5d97772bc50c",
+                "originalRequest": {
+                "data": {
+                "conversation": {
+                "type": 2
+            },
+                "user": {
+                "user_id": "11112226094657824893"
+            }
+            }
+            }
+            }""")
+
+            val mockRequest = RequestWrapper(headers, body)
+            val mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            val app = ApiAiApp(
+                    request = mockRequest,
+                    response = mockResponse
+            )
+
+            // Test new and TODO old API
+//            expect(app.getUser().user_id).to.equal("11112226094657824893")
+            expect(app.getUser()?.userId).to.equal("11112226094657824893")
+        }
+    }
+
+    /**
+     * Describes the behavior for ApiAiApp getUserName method.
+     */
+    describe("ApiAiApp#getUserName") {
+        // Success case test, when the API returns a valid 200 response with the response object
+        it("Should validate assistant request user.") {
+            val headers = mapOf(
+                    "Content-Type" to "application/json",
+                    "google-assistant-api-version" to "v1"
+            )
+            val body = requestFromJson("""{
+                "id": "ce7295cc-b042-42d8-8d72-14b83597ac1e",
+                "timestamp": "2016-10-28T03:05:34.288Z",
+                "result": {
+                "source": "agent",
+                "resolvedQuery": "start guess a number game",
+                "speech": "",
+                "action": "generate_answer",
+                "actionIncomplete": false,
+                "parameters": {
+
+            },
+                "contexts": [
+
+                ],
+                "metadata": {
+                "intentId": "56da4637-0419-46b2-b851-d7bf726b1b1b",
+                "webhookUsed": "true",
+                "intentName": "start_game"
+            },
+                "fulfillment": {
+                "speech": ""
+            },
+                "score": 1
+            },
+                "status": {
+                "code": 200,
+                "errorType": "success"
+            },
+                "sessionId": "e420f007-501d-4bc8-b551-5d97772bc50c",
+                "originalRequest": {
+                "data": {
+                "conversation": {
+                "type": 2
+            },
+                "user": {
+                "user_id": "11112226094657824893",
+                "profile": {
+                "display_name": "John Smith",
+                "given_name": "John",
+                "family_name": "Smith"
+            }
+            }
+            }
+            }
+            }""")
+            var mockRequest = RequestWrapper(headers, body)
+            var mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            var app = ApiAiApp(
+                    request = mockRequest,
+                    response = mockResponse
+            )
+
+            expect(app.getUserName()?.displayName).to.equal("John Smith");
+            expect(app.getUserName()?.givenName).to.equal("John");
+            expect(app.getUserName()?.familyName).to.equal("Smith");
+
+            // Test the false case
+
+            body.originalRequest?.data?.user?.profile = null
+
+            mockRequest = RequestWrapper(headers, body)
+            mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            app = ApiAiApp(
+                    request = mockRequest,
+                    response = mockResponse
+            )
+
+            expect(app.getUserName()).to.equal(null);
+        }
+    }
+
+    /**
+     * Describes the behavior for ApiAiApp getDeviceLocation method.
+     */
+    describe("ApiAiApp#getDeviceLocation") {
+        // Success case test, when the API returns a valid 200 response with the response object
+        it("Should validate assistant request user.") {
+            val headers = mapOf(
+                    "Content-Type" to "application/json",
+                    "google-assistant-api-version" to "v1"
+            )
+            val body = requestFromJson("""{
+                "id": "ce7295cc-b042-42d8-8d72-14b83597ac1e",
+                "timestamp": "2016-10-28T03:05:34.288Z",
+                "result": {
+                "source": "agent",
+                "resolvedQuery": "start guess a number game",
+                "speech": "",
+                "action": "generate_answer",
+                "actionIncomplete": false,
+                "parameters": {
+
+            },
+                "contexts": [
+
+                ],
+                "metadata": {
+                "intentId": "56da4637-0419-46b2-b851-d7bf726b1b1b",
+                "webhookUsed": "true",
+                "intentName": "start_game"
+            },
+                "fulfillment": {
+                "speech": ""
+            },
+                "score": 1
+            },
+                "status": {
+                "code": 200,
+                "errorType": "success"
+            },
+                "sessionId": "e420f007-501d-4bc8-b551-5d97772bc50c",
+                "originalRequest": {
+                "data": {
+                "conversation": {
+                "type": 2
+            },
+                "user": {
+                "user_id": "11112226094657824893"
+            },
+                "device": {
+                "location": {
+                "coordinates": {
+                "latitude": 37.3861,
+                "longitude": 122.0839
+            },
+                "formatted_address": "123 Main St, Anytown, CA 12345, United States",
+                "zip_code": "12345",
+                "city": "Anytown"
+            }
+            }
+            }
+            }
+            }""")
+
+            var mockRequest = RequestWrapper(headers, body)
+            var mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            var app = ApiAiApp(
+                    request = mockRequest,
+                    response = mockResponse
+            )
+
+            expect(app.getDeviceLocation()?.coordinates).to.equal(Coordinates(
+                    latitude = 37.3861,
+                    longitude = 122.0839))
+            expect(app.getDeviceLocation()?.formattedAddress)
+                    .to.equal("123 Main St, Anytown, CA 12345, United States")
+            expect(app.getDeviceLocation()?.zipCode).to.equal("12345")
+            expect(app.getDeviceLocation()?.city).to.equal("Anytown")
+
+            // Test the false case
+
+            body.originalRequest?.data?.device = null
+
+            mockRequest = RequestWrapper(headers, body)
+            mockResponse = ResponseWrapper<ApiAiResponse<MockParameters>>()
+
+            app = ApiAiApp(
+                    request = mockRequest,
+                    response = mockResponse
+            )
+
+            expect(app.getDeviceLocation()).to.equal(null)
+        }
     }
 })
 
