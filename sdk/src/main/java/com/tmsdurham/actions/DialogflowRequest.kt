@@ -1,7 +1,6 @@
-package com.tmsdurham.dialogflow
+package com.tmsdurham.actions
 
-import com.tmsdurham.dialogflow.google.GoogleData
-import com.tmsdurham.actions.*
+import com.tmsdurham.actions.google.GoogleData
 import com.tmsdurham.actions.actions.ActionRequest
 import com.tmsdurham.actions.actions.Sender
 
@@ -80,7 +79,7 @@ data class Data(val nothing: Nothing? = null) : MutableMap<String, Any?> by muta
 }
 
 data class Result(
-        var contexts: List<Context> = listOf(),
+        var contexts: kotlin.collections.List<Context> = listOf(),
         val source: String = "",
         var resolvedQuery: String = "",
         var action: String = "",
@@ -134,7 +133,7 @@ data class User(
 data class Profile(var displayName: String? = null, var givenName: String? = null, var familyName: String? = null)
 
 data class Surface(
-        val capabilities: List<Capabilities>? = null)
+        val capabilities: kotlin.collections.List<Capabilities>? = null)
 
 data class Capabilities(val name: String? = null)
 
@@ -148,9 +147,11 @@ data class Arguments(
         var name: String? = null,
         val extension: TransactionRequirementsCheckResult? = null)
 
-data class DateTimeValue(var date: Date? = null, var time: Time? = null)
-data class Date(var month: Int? = null, var year: Int? = null, var day: Int? = null)
-data class Time(var hours: Int? = null)
+data class DateTimeValue(var date: Date? = null, var time: Time? = null) {
+
+    data class Date(var month: Int? = null, var year: Int? = null, var day: Int? = null)
+    data class Time(var hours: Int? = null)
+}
 
 data class PostalAddress(var regionCode: String? = null,
                          var recipients: MutableList<String>? = null,

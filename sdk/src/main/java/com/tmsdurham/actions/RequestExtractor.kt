@@ -1,6 +1,5 @@
 package com.tmsdurham.actions
 
-import com.tmsdurham.dialogflow.*
 import com.tmsdurham.actions.actions.ActionRequest
 
 
@@ -304,8 +303,8 @@ class RequestExtractor<T, S>(val app: AssistantApp<T, S>) {
             error("No surface capabilities in incoming request")
             return null
         }
-        if (data.surface?.capabilities != null) {
-            return data.surface?.capabilities?.map { it.name }?.filterNotNull()?.toMutableList()
+        if (data?.surface?.capabilities != null) {
+            return data?.surface?.capabilities?.map { it.name }?.filterNotNull()?.toMutableList()
         } else {
             error("No surface capabilities in incoming request")
             return null

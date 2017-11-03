@@ -1,7 +1,6 @@
 package com.tmsdurham.actions
 
-import com.tmsdurham.dialogflow.*
-import com.tmsdurham.dialogflow.google.GoogleData
+import com.tmsdurham.actions.google.GoogleData
 import java.util.logging.Logger
 
 typealias Handler<T, S> = (AssistantApp<T, S>) -> Unit

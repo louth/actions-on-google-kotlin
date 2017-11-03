@@ -1,4 +1,4 @@
-package com.tmsdurham.dialogflow.google
+package com.tmsdurham.actions.google
 
 import com.tmsdurham.actions.*
 

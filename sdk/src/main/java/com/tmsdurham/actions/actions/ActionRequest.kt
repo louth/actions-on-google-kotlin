@@ -1,6 +1,7 @@
 package com.tmsdurham.actions.actions
 
-import com.tmsdurham.dialogflow.*
+import com.tmsdurham.actions.*
+
 
 data class ActionRequest(val conversation: Conversation? = null,
                          var inputs: MutableList<Input>? = null,

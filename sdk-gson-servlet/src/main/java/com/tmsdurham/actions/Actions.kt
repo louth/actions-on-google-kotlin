@@ -2,8 +2,6 @@ package main.java.com.tmsdurham.dialogflow.sample
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.tmsdurham.dialogflow.DialogflowRequest
-import com.tmsdurham.dialogflow.DialogflowResponse
 import com.tmsdurham.actions.*
 import com.tmsdurham.actions.actions.ActionRequest
 import com.tmsdurham.actions.actions.ActionResponse

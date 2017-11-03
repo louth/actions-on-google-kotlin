@@ -1,7 +1,7 @@
 package com.tmsdurham.actions
 
-import com.tmsdurham.dialogflow.google.GoogleData
 import com.tmsdurham.actions.actions.*
+import com.tmsdurham.actions.google.GoogleData
 
 
 // Constants
